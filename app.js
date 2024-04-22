@@ -1,13 +1,4 @@
-// Initialize Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyA_S4T6yPXYUhhfPbdIXaeOcuHcVImEPwU",
-  authDomain: "agritracking-ceb9a.firebaseapp.com",
-  projectId: "agritracking-ceb9a",
-  storageBucket: "agritracking-ceb9a.appspot.com",
-  messagingSenderId: "130366030796",
-  appId: "1:130366030796:web:e43cdbbb1c071bef0b1369"
-};
-firebase.initializeApp(firebaseConfig);
+
 
 const db = firebase.firestore();
 
