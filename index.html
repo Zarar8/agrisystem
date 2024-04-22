@@ -69,8 +69,25 @@
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"></script>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyA_S4T6yPXYUhhfPbdIXaeOcuHcVImEPwU",
+    authDomain: "agritracking-ceb9a.firebaseapp.com",
+    projectId: "agritracking-ceb9a",
+    storageBucket: "agritracking-ceb9a.appspot.com",
+    messagingSenderId: "130366030796",
+    appId: "1:130366030796:web:e43cdbbb1c071bef0b1369"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
 <script src="app.js"></script>
 </body>
 </html>
