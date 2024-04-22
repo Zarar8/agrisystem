@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agricultural Business Tracking</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<h1>Agricultural Business Tracking</h1>
+
+<div id="addExpense">
+  <h2>Add Expenses</h2>
+  <form id="expenseForm">
+    <label for="category">Category:</label>
+    <select id="category">
+      <option value="seeds">Seeds</option>
+      <option value="fertilizers">Fertilizers</option>
+      <option value="labor">Labor</option>
+      <!-- Add more categories as needed -->
+    </select><br>
+    <label for="amount">Amount:</label>
+    <input type="number" id="amount" required><br>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+
+<div id="displayExpenses">
+  <h2>Display Expenses</h2>
+  <table id="expenseTable">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Amount</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="expenseList">
+      <!-- Expenses will be dynamically added here -->
+    </tbody>
+  </table>
+</div>
+
+<div id="visualizeExpenses">
+  <h2>Visualize Expenses</h2>
+  <div id="chartContainer">
+    <!-- Placeholder for chart -->
+    <canvas id="expenseChart"></canvas>
+  </div>
+</div>
+
+<div id="budgeting">
+  <h2>Budgeting</h2>
+  <form id="budgetForm">
+    <label for="budgetCategory">Category:</label>
+    <select id="budgetCategory">
+      <option value="seeds">Seeds</option>
+      <option value="fertilizers">Fertilizers</option>
+      <option value="labor">Labor</option>
+      <!-- Add more categories as needed -->
+    </select><br>
+    <label for="budgetAmount">Budget Amount:</label>
+    <input type="number" id="budgetAmount" required><br>
+    <button type="submit">Set Budget</button>
+  </form>
+  <div id="budgetAlerts">
+    <!-- Budget alerts will be displayed here -->
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
