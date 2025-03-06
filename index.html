@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Recognition - Queen Detector</title>
+    <title>Queen Detector - Face Recognition</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
     <style>
         body {
@@ -36,6 +36,7 @@
             height: auto;
             margin-top: 10px;
             border-radius: 10px;
+            display: none; /* Hides uploaded image */
         }
         button {
             background: #28a745;
@@ -62,14 +63,11 @@
     </style>
 </head>
 <body>
-    <h2>Queen Detector!</h2>
-    <img id="queenImage" src="queen.jpg"><br>
-
     <h2>Upload an Image to Check</h2>
     <label for="testImageUpload">Choose Image</label>
     <input type="file" id="testImageUpload" accept="image/*">
     <img id="testImage"><br>
-
+    
     <button id="identifyBtn" disabled>Check Image</button>
 
     <h3>Result:</h3>
@@ -83,14 +81,16 @@
             await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
             await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
 
-            const queenImg = document.getElementById('queenImage');
+            // Secretly load girlfriend's face
+            const queenImg = new Image();
+            queenImg.src = "queen.jpg";
             queenImg.onload = async function () {
                 const detection = await faceapi.detectSingleFace(queenImg).withFaceLandmarks().withFaceDescriptor();
                 if (detection) {
                     queenFaceDescriptor = detection.descriptor;
-                    document.getElementById('result').innerText = "Queen's face is set!";
+                    console.log("Queen's face loaded successfully!");
                 } else {
-                    document.getElementById('result').innerText = "Error: Face not detected in queen.jpg";
+                    console.log("Error: Face not detected in queen.jpg");
                 }
             };
         }
