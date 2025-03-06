@@ -3,47 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Recognition with TensorFlow.js</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <title>Face Recognition - Queen Detector</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        input {
+            display: none;
+        }
+        label {
+            display: block;
+            width: 90%;
+            max-width: 300px;
+            margin: 10px auto;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        img {
+            max-width: 90%;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            width: 90%;
+            max-width: 300px;
+            margin: 10px auto;
+            display: block;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background: gray;
+            cursor: not-allowed;
+        }
+        p {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-    <h2>Upload an Image for AI Identification</h2>
+    <h2>Queen Detector!</h2>
+    <img id="queenImage" src="queen.jpg"><br>
 
-    <label>Select Image:</label>
-    <input type="file" id="imageUpload">
-    <br><br>
-    <img id="image" width="300"><br><br>
+    <h2>Upload an Image to Check</h2>
+    <label for="testImageUpload">Choose Image</label>
+    <input type="file" id="testImageUpload" accept="image/*">
+    <img id="testImage"><br>
 
-    <button id="identifyBtn">Identify Image</button>
+    <button id="identifyBtn" disabled>Check Image</button>
 
     <h3>Result:</h3>
-    <p id="result">Image: Not Identified</p>
+    <p id="result">Waiting for image...</p>
 
     <script>
-        // HTML elements select karo
-        const imageUpload = document.getElementById('imageUpload');
-        const image = document.getElementById('image');
-        const result = document.getElementById('result');
-        const identifyBtn = document.getElementById('identifyBtn');
+        let queenFaceDescriptor = null;
 
-        // Jab user image upload kare, to wo screen par show ho
-        imageUpload.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onload = function() {
-                image.src = reader.result;
+        async function loadModels() {
+            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
+
+            const queenImg = document.getElementById('queenImage');
+            queenImg.onload = async function () {
+                const detection = await faceapi.detectSingleFace(queenImg).withFaceLandmarks().withFaceDescriptor();
+                if (detection) {
+                    queenFaceDescriptor = detection.descriptor;
+                    document.getElementById('result').innerText = "Queen's face is set!";
+                } else {
+                    document.getElementById('result').innerText = "Error: Face not detected in queen.jpg";
+                }
             };
-            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('testImageUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            document.getElementById('testImage').src = URL.createObjectURL(file);
+            document.getElementById('identifyBtn').disabled = false;
         });
 
-        // Jab button click ho, AI image identify kare
-        identifyBtn.addEventListener('click', async function() {
-            const model = await mobilenet.load(); // AI model load karo
-            const predictions = await model.classify(image); // Image classify karo
+        document.getElementById('identifyBtn').addEventListener('click', async function() {
+            if (!queenFaceDescriptor) {
+                document.getElementById('result').innerText = "Error: Queen's face not set!";
+                return;
+            }
 
-            result.innerHTML = `Image: ${predictions[0].className}`; // Result show karo
+            const testImg = document.getElementById('testImage');
+            const detection = await faceapi.detectSingleFace(testImg).withFaceLandmarks().withFaceDescriptor();
+
+            if (!detection) {
+                document.getElementById('result').innerText = "No face detected!";
+                return;
+            }
+
+            const faceMatcher = new faceapi.FaceMatcher(queenFaceDescriptor);
+            const match = faceMatcher.findBestMatch(detection.descriptor);
+
+            if (match.distance < 0.5) { 
+                document.getElementById('result').innerText = "She is Queen 👑";
+            } else {
+                document.getElementById('result').innerText = "She is NOT Queen ❌";
+            }
         });
+
+        loadModels();
     </script>
 </body>
 </html>
