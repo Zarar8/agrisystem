@@ -3,129 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queen Detector - Face Recognition</title>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+    <title>AI Chatbot using RiveScript.js</title>
+    <script src="https://unpkg.com/rivescript@latest/lib/rivescript.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
+            margin: 0;
+            padding: 0;
             background-color: #f4f4f4;
-            padding: 20px;
         }
-        h2 {
-            color: #333;
+        .chat-container {
+            width: 350px;
+            height: 500px;
+            background: white;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+        .chat-box {
+            height: 400px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .user-message {
+            color: blue;
+            text-align: right;
+            margin: 5px;
+        }
+        .bot-message {
+            color: green;
+            text-align: left;
+            margin: 5px;
         }
         input {
-            display: none;
-        }
-        label {
-            display: block;
-            width: 90%;
-            max-width: 300px;
-            margin: 10px auto;
+            width: 80%;
             padding: 10px;
-            background: #007bff;
-            color: white;
-            text-align: center;
+            border: 1px solid #ddd;
             border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        img {
-            max-width: 90%;
-            height: auto;
-            margin-top: 10px;
-            border-radius: 10px;
-            display: none; /* Hides uploaded image */
         }
         button {
-            background: #28a745;
-            color: white;
+            padding: 10px;
             border: none;
-            padding: 15px;
-            font-size: 18px;
-            width: 90%;
-            max-width: 300px;
-            margin: 10px auto;
-            display: block;
-            border-radius: 5px;
+            background: blue;
+            color: white;
             cursor: pointer;
-        }
-        button:disabled {
-            background: gray;
-            cursor: not-allowed;
-        }
-        p {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <h2>Upload an Image to Check</h2>
-    <label for="testImageUpload">Choose Image</label>
-    <input type="file" id="testImageUpload" accept="image/*">
-    <img id="testImage"><br>
-    
-    <button id="identifyBtn" disabled>Check Image</button>
 
-    <h3>Result:</h3>
-    <p id="result">Waiting for image...</p>
+    <h1>Simple AI Chatbot</h1>
+    <div class="chat-container">
+        <div id="chat-box" class="chat-box"></div>
+        <input type="text" id="userInput" placeholder="Type your message..." autofocus>
+        <button onclick="sendMessage()">Send</button>
+    </div>
 
     <script>
-        let queenFaceDescriptor = null;
+        const bot = new RiveScript();
+        
+        bot.loadFile("bot.rive").then(() => {
+            bot.sortReplies();
+        });
 
-        async function loadModels() {
-            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
-            await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
-            await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
+        function sendMessage() {
+            let inputBox = document.getElementById("userInput");
+            let userMessage = inputBox.value;
+            inputBox.value = "";
 
-            // Secretly load girlfriend's face
-            const queenImg = new Image();
-            queenImg.src = "queen.jpg";
-            queenImg.onload = async function () {
-                const detection = await faceapi.detectSingleFace(queenImg).withFaceLandmarks().withFaceDescriptor();
-                if (detection) {
-                    queenFaceDescriptor = detection.descriptor;
-                    console.log("Queen's face loaded successfully!");
-                } else {
-                    console.log("Error: Face not detected in queen.jpg");
-                }
-            };
+            let chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += "<p class='user-message'><b>You:</b> " + userMessage + "</p>";
+
+            bot.reply("user", userMessage).then(response => {
+                chatBox.innerHTML += "<p class='bot-message'><b>Bot:</b> " + response + "</p>";
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
         }
-
-        document.getElementById('testImageUpload').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            document.getElementById('testImage').src = URL.createObjectURL(file);
-            document.getElementById('identifyBtn').disabled = false;
-        });
-
-        document.getElementById('identifyBtn').addEventListener('click', async function() {
-            if (!queenFaceDescriptor) {
-                document.getElementById('result').innerText = "Error: Queen's face not set!";
-                return;
-            }
-
-            const testImg = document.getElementById('testImage');
-            const detection = await faceapi.detectSingleFace(testImg).withFaceLandmarks().withFaceDescriptor();
-
-            if (!detection) {
-                document.getElementById('result').innerText = "No face detected!";
-                return;
-            }
-
-            const faceMatcher = new faceapi.FaceMatcher(queenFaceDescriptor);
-            const match = faceMatcher.findBestMatch(detection.descriptor);
-
-            if (match.distance < 0.5) { 
-                document.getElementById('result').innerText = "She is Queen 👑";
-            } else {
-                document.getElementById('result').innerText = "She is NOT Queen ❌";
-            }
-        });
-
-        loadModels();
     </script>
+
 </body>
 </html>
