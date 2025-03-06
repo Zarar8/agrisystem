@@ -1,32 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Recognition with TensorFlow.js</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
 </head>
 <body>
-    <h2>Upload an Image to Identify</h2>
+    <h2>Upload an Image for AI Identification</h2>
+
+    <label>Select Image:</label>
     <input type="file" id="imageUpload">
-    <img id="image" width="300">
-    <p id="result"></p>
+    <br><br>
+    <img id="image" width="300"><br><br>
+
+    <button id="identifyBtn">Identify Image</button>
+
+    <h3>Result:</h3>
+    <p id="result">Image: Not Identified</p>
+
     <script>
+        // HTML elements select karo
         const imageUpload = document.getElementById('imageUpload');
         const image = document.getElementById('image');
         const result = document.getElementById('result');
+        const identifyBtn = document.getElementById('identifyBtn');
 
-        imageUpload.addEventListener('change', async (event) => {
+        // Jab user image upload kare, to wo screen par show ho
+        imageUpload.addEventListener('change', function(event) {
             const file = event.target.files[0];
             const reader = new FileReader();
-            reader.onload = function () {
+            reader.onload = function() {
                 image.src = reader.result;
             };
             reader.readAsDataURL(file);
+        });
 
-            const model = await mobilenet.load();
-            model.classify(image).then(predictions => {
-                result.innerHTML = `Prediction: ${predictions[0].className}`;
-            });
+        // Jab button click ho, AI image identify kare
+        identifyBtn.addEventListener('click', async function() {
+            const model = await mobilenet.load(); // AI model load karo
+            const predictions = await model.classify(image); // Image classify karo
+
+            result.innerHTML = `Image: ${predictions[0].className}`; // Result show karo
         });
     </script>
 </body>
