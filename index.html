@@ -3,87 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chatbot using RiveScript.js</title>
-    <script src="https://unpkg.com/rivescript@latest/lib/rivescript.min.js"></script>
+    <title>Face Comparison Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        .chat-container {
-            width: 350px;
-            height: 500px;
-            background: white;
-            margin: 50px auto;
+            max-width: 500px;
+            margin: 0 auto;
             padding: 20px;
+            text-align: center;
+        }
+        .container {
+            background-color: #f5f5f5;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-        .chat-box {
-            height: 400px;
-            overflow-y: auto;
-            text-align: left;
+        h1 {
+            color: #333;
         }
-        .user-message {
-            color: blue;
-            text-align: right;
-            margin: 5px;
-        }
-        .bot-message {
-            color: green;
-            text-align: left;
-            margin: 5px;
-        }
-        input {
-            width: 80%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px;
-            border: none;
-            background: blue;
+        #uploadBtn {
+            background-color: #4CAF50;
             color: white;
-            cursor: pointer;
+            padding: 12px 20px;
+            border: none;
             border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: background-color 0.3s;
+        }
+        #uploadBtn:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #uploadedImage {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        #loadingMessage {
+            display: none;
+            margin-top: 20px;
+            color: #666;
+        }
+        .match {
+            color: #4CAF50;
+        }
+        .no-match {
+            color: #f44336;
+        }
+        .error {
+            color: #ff9800;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #progressContainer {
+            width: 100%;
+            height: 8px;
+            background-color: #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+            display: none;
+        }
+        #progressBar {
+            height: 100%;
+            width: 0%;
+            background-color: #4CAF50;
+            transition: width 0.3s;
         }
     </style>
 </head>
 <body>
-
-    <h1>Simple AI Chatbot</h1>
-    <div class="chat-container">
-        <div id="chat-box" class="chat-box"></div>
-        <input type="text" id="userInput" placeholder="Type your message..." autofocus>
-        <button onclick="sendMessage()">Send</button>
+    <div class="container">
+        <h1>Face Comparison Tool</h1>
+        
+        <p>Upload an image to check if it matches our reference face.</p>
+        
+        <label for="imageUpload">
+            <button id="uploadBtn" type="button">Upload Image</button>
+        </label>
+        <input type="file" id="imageUpload" accept="image/*">
+        
+        <div id="progressContainer">
+            <div id="progressBar"></div>
+        </div>
+        
+        <div id="loadingMessage">Processing image, please wait...</div>
+        
+        <div id="result"></div>
+        
+        <img id="uploadedImage" alt="Uploaded image">
+        
+        <!-- Hidden canvas for image processing -->
+        <canvas id="canvas" style="display: none;"></canvas>
+        
+        <!-- Hidden image for storing reference face -->
+        <img id="queenImage" style="display: none;" alt="Reference image">
     </div>
 
     <script>
-        const bot = new RiveScript();
+        // Reference to important DOM elements
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadedImage = document.getElementById('uploadedImage');
+        const result = document.getElementById('result');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const queenImage = document.getElementById('queenImage');
         
-        bot.loadFile("bot.rive").then(() => {
-            bot.sortReplies();
+        // Set the queen image source (this would typically be a path to your image)
+        // For this example, we're using a base64 encoded placeholder
+        // In a real application, replace this with the actual path to queen.jpg
+        queenImage.src = 'queen.jpg';
+        
+        // Variable to store the queen's face descriptor
+        let queenFaceDescriptor = null;
+        
+        // The threshold for face matching
+        const FACE_MATCH_THRESHOLD = 0.5;
+
+        // Load face-api.js models when the page loads
+        window.addEventListener('load', async () => {
+            try {
+                // Show progress
+                progressContainer.style.display = 'block';
+                
+                // Load models one by one with progress updates
+                const models = [
+                    { name: 'Face Detection', path: 'ssd_mobilenetv1_model-weights_manifest.json', progress: 25 },
+                    { name: 'Face Landmarks', path: 'face_landmark_68_model-weights_manifest.json', progress: 50 },
+                    { name: 'Face Recognition', path: 'face_recognition_model-weights_manifest.json', progress: 75 }
+                ];
+                
+                // Set the models path
+                await loadModels();
+                
+                // Load the queen's face descriptor
+                await loadQueenFaceDescriptor();
+                
+                // Hide progress after loading is complete
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error loading models:', error);
+                result.textContent = 'Error loading face detection models. Please try again later.';
+                result.className = 'error';
+            }
         });
 
-        function sendMessage() {
-            let inputBox = document.getElementById("userInput");
-            let userMessage = inputBox.value;
-            inputBox.value = "";
+        // Function to load face-api.js models
+        async function loadModels() {
+            try {
+                // The URL to the models directory
+                const MODEL_URL = 'https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/models';
+                
+                // Load required models
+                await face_api.loadSsdMobilenetv1Model(MODEL_URL);
+                progressBar.style.width = '33%';
+                
+                await face_api.loadFaceLandmarkModel(MODEL_URL);
+                progressBar.style.width = '66%';
+                
+                await face_api.loadFaceRecognitionModel(MODEL_URL);
+                progressBar.style.width = '100%';
+                
+                console.log('Models loaded successfully');
+            } catch (error) {
+                console.error('Error loading models:', error);
+                throw error;
+            }
+        }
 
-            let chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML += "<p class='user-message'><b>You:</b> " + userMessage + "</p>";
-
-            bot.reply("user", userMessage).then(response => {
-                chatBox.innerHTML += "<p class='bot-message'><b>Bot:</b> " + response + "</p>";
-                chatBox.scrollTop = chatBox.scrollHeight;
+        // Function to load the queen's face descriptor
+        async function loadQueenFaceDescriptor() {
+            return new Promise((resolve, reject) => {
+                queenImage.onload = async () => {
+                    try {
+                        // Detect the face in the queen image
+                        const detections = await face_api.detectSingleFace(queenImage)
+                            .withFaceLandmarks()
+                            .withFaceDescriptor();
+                        
+                        if (detections) {
+                            // Store the descriptor for later comparison
+                            queenFaceDescriptor = detections.descriptor;
+                            console.log('Queen face descriptor loaded');
+                            resolve();
+                        } else {
+                            console.error('No face detected in the reference image');
+                            result.textContent = 'Error: No face detected in the reference image.';
+                            result.className = 'error';
+                            reject(new Error('No face detected in the reference image'));
+                        }
+                    } catch (error) {
+                        console.error('Error processing reference image:', error);
+                        result.textContent = 'Error processing reference image.';
+                        result.className = 'error';
+                        reject(error);
+                    }
+                };
+                
+                queenImage.onerror = () => {
+                    console.error('Failed to load the reference image');
+                    result.textContent = 'Error: Failed to load the reference image.';
+                    result.className = 'error';
+                    reject(new Error('Failed to load the reference image'));
+                };
             });
         }
-    </script>
 
+        // Handle image upload
+        imageUpload.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            
+            if (file) {
+                // Reset previous results
+                result.textContent = '';
+                result.className = '';
+                
+                // Show loading message
+                loadingMessage.style.display = 'block';
+                
+                // Create object URL for the uploaded image
+                const imageUrl = URL.createObjectURL(file);
+                uploadedImage.src = imageUrl;
+                
+                // Wait for the image to load
+                uploadedImage.onload = async () => {
+                    try {
+                        // Detect face in the uploaded image
+                        const detection = await face_api.detectSingleFace(uploadedImage)
+                            .withFaceLandmarks()
+                            .withFaceDescriptor();
+                        
+                        // Hide loading message
+                        loadingMessage.style.display = 'none';
+                        
+                        // Show the uploaded image
+                        uploadedImage.style.display = 'block';
+                        
+                        if (!detection) {
+                            result.textContent = 'No face detected in the uploaded image.';
+                            result.className = 'error';
+                            return;
+                        }
+                        
+                        if (!queenFaceDescriptor) {
+                            result.textContent = 'Reference face not loaded. Please refresh and try again.';
+                            result.className = 'error';
+                            return;
+                        }
+                        
+                        // Compare with the queen's face descriptor
+                        const distance = face_api.euclideanDistance(detection.descriptor, queenFaceDescriptor);
+                        console.log('Face distance:', distance);
+                        
+                        // Determine if the faces match based on threshold
+                        if (distance < FACE_MATCH_THRESHOLD) {
+                            result.textContent = 'She is Queen 👑';
+                            result.className = 'match';
+                        } else {
+                            result.textContent = 'She is NOT Queen ❌';
+                            result.className = 'no-match';
+                        }
+                        
+                    } catch (error) {
+                        console.error('Error processing uploaded image:', error);
+                        loadingMessage.style.display = 'none';
+                        result.textContent = 'Error processing the uploaded image.';
+                        result.className = 'error';
+                    }
+                };
+                
+                uploadedImage.onerror = () => {
+                    loadingMessage.style.display = 'none';
+                    result.textContent = 'Error loading the uploaded image.';
+                    result.className = 'error';
+                };
+            }
+        });
+    </script>
 </body>
-</html>
+            </html>
